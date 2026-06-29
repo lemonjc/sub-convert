@@ -63,11 +63,11 @@ def test_http_subscription_endpoint(monkeypatch) -> None:
     assert health.json() == {"status": "ok"}
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/yaml")
-    assert response.headers["content-disposition"] == 'attachment; filename="alice.yaml"'
+    assert response.headers["content-disposition"] == "attachment; filename=alice.yaml"
     assert "🇺🇸Example-DL" in response.text
     assert "Remote Example" not in response.text
     assert response_by_alias.status_code == 200
     assert response_by_alias.headers["content-disposition"] == (
-        'attachment; filename="custom.yaml"'
+        "attachment; filename=custom.yaml"
     )
     assert missing.status_code == 404

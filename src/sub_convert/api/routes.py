@@ -27,7 +27,7 @@ def _yaml_response(content: str, *, filename: str | None) -> PlainTextResponse:
     return PlainTextResponse(
         content,
         media_type="text/yaml; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
+        headers={"Content-Disposition": f"attachment; filename={safe_filename}"},
     )
 
 
