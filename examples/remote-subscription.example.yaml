@@ -1,0 +1,9 @@
+proxies:
+  - name: "Remote Example"
+    type: ss
+    server: 198.51.100.20
+    port: 8388
+    cipher: aes-128-gcm
+    password: "example-password"
+    udp: true
+

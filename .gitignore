@@ -1,0 +1,32 @@
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local environment files
+.env
+.env.*
+
+# Local production configs and generated subscription snapshots
+config.yaml
+configs/*.json
+Sakura.yaml
+lemonjc.yaml
+prompt.txt
+template.json
+template.yaml
+
+# Runtime logs
+*.log

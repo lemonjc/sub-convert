@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "FastAPI: sub-convert",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "sub_convert.main:app",
+        "--reload",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
+      "jinja": true,
+      "env": {
+        "SUB_CONVERT_CONFIG": "config.yaml",
+        "SUB_CONVERT_LOG_LEVEL": "DEBUG"
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Pytest",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "-s"
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

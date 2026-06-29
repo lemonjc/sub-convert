@@ -1,0 +1,46 @@
+template:
+  file_path: template.example.yaml
+  user_agent: "sub-convert/0.1"
+strict_conversion: false
+http_timeout_seconds: 10
+remote_cache_ttl_seconds: 300
+http_user_agent: "sub-convert/0.1"
+
+render:
+  inject_proxy_groups:
+    - "🌏️Main Proxy"
+    - "🇨🇳China Services"
+    - "🍎Apple"
+    - "🔍Google"
+    - "💻Microsoft"
+    - "🤖AI"
+    - "🌸Bahamut"
+    - "📺Bilibili"
+    - "🎙️Discord"
+    - "🎨Pixiv"
+    - "✈️Telegram"
+    - "⚖Load Balance"
+    - "♾️Auto Select"
+
+servers:
+  - id: example-server
+    name: "🇺🇸Example"
+    config_path: examples/sing-box-server.example.json
+    direct_server: 203.0.113.10
+    inbounds:
+      VLESS-REALITY-IN:
+        suffix: DL
+      VLESS-HTTPUPGRADE-IN:
+        suffix: CF
+        server: cdn.example.com
+        port: 443
+
+users:
+  - username: alice
+    token_hash: 698652ef246e4807f16658c5209deb99b329fd6600d6dc8201357e502b5c4a98
+    allowed_servers:
+      - example-server
+    remote_subscriptions:
+      - name: Example Remote
+        file_path: examples/remote-subscription.example.yaml
+        user_agent: "clash.meta"
