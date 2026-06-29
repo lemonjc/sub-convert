@@ -55,13 +55,19 @@ def test_http_subscription_endpoint(monkeypatch) -> None:
     with TestClient(app) as client:
         health = client.get("/healthz")
         response = client.get("/sub/lemonjc-dev-token?include_remote=false")
-        response_by_alias = client.get("/api/v1/subscription/lemonjc-dev-token?merge_remote=false")
+        response_by_alias = client.get(
+            "/api/v1/subscription/lemonjc-dev-token?merge_remote=false&filename=custom.yaml"
+        )
         missing = client.get("/sub/wrong-token")
 
     assert health.json() == {"status": "ok"}
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/yaml")
+    assert response.headers["content-disposition"] == 'attachment; filename="alice.yaml"'
     assert "🇺🇸Example-DL" in response.text
     assert "Remote Example" not in response.text
     assert response_by_alias.status_code == 200
+    assert response_by_alias.headers["content-disposition"] == (
+        'attachment; filename="custom.yaml"'
+    )
     assert missing.status_code == 404
