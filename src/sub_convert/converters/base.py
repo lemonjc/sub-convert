@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 from sub_convert.config.models import InboundPublishOptions, ServerSource
-from sub_convert.mihomo.models import MihomoProxy
 from sub_convert.singbox.models import SingBoxInbound, SingBoxUser
+from sub_convert.subscriptions.formats import SubscriptionFormat
+
+ProxyNode = dict[str, Any]
 
 
 class ConversionError(RuntimeError):
@@ -24,8 +27,9 @@ class ProtocolConverter(ABC):
         inbound: SingBoxInbound,
         user: SingBoxUser,
         publish: InboundPublishOptions,
-    ) -> MihomoProxy:
-        """Convert a sing-box inbound/user pair into a Mihomo proxy."""
+        output_format: SubscriptionFormat = SubscriptionFormat.MIHOMO,
+    ) -> ProxyNode:
+        """Convert a sing-box inbound/user pair into a client node."""
 
 
 def build_proxy_name(server: ServerSource, publish: InboundPublishOptions) -> str:

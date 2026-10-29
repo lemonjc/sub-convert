@@ -7,9 +7,15 @@ from cryptography.hazmat.primitives.asymmetric import x25519
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from sub_convert.config.models import InboundPublishOptions, ServerSource
-from sub_convert.converters.base import ConversionError, ProtocolConverter, build_proxy_name
+from sub_convert.converters.base import (
+    ConversionError,
+    ProtocolConverter,
+    ProxyNode,
+    build_proxy_name,
+)
 from sub_convert.mihomo.models import MihomoProxy
 from sub_convert.singbox.models import SingBoxInbound, SingBoxUser
+from sub_convert.subscriptions.formats import SubscriptionFormat
 
 
 def _b64url_decode(value: str) -> bytes:
@@ -28,6 +34,24 @@ def reality_public_key(private_key: str) -> str:
     return _b64url_encode(public)
 
 
+def _singbox_tls(
+    *,
+    publish: InboundPublishOptions,
+    server_name: str | None,
+) -> dict[str, Any] | None:
+    if not publish.tls:
+        return None
+    return {
+        "enabled": True,
+        "server_name": server_name,
+        "insecure": publish.skip_cert_verify,
+        "utls": {
+            "enabled": True,
+            "fingerprint": publish.client_fingerprint,
+        },
+    }
+
+
 class VlessRealityConverter(ProtocolConverter):
     def supports(self, inbound: SingBoxInbound) -> bool:
         reality = (inbound.tls or {}).get("reality") or {}
@@ -40,7 +64,8 @@ class VlessRealityConverter(ProtocolConverter):
         inbound: SingBoxInbound,
         user: SingBoxUser,
         publish: InboundPublishOptions,
-    ) -> MihomoProxy:
+        output_format: SubscriptionFormat = SubscriptionFormat.MIHOMO,
+    ) -> ProxyNode:
         if not user.uuid:
             raise ConversionError(f"inbound {inbound.tag} user {user.name} has no uuid")
         if not server.direct_server:
@@ -52,6 +77,28 @@ class VlessRealityConverter(ProtocolConverter):
         short_ids = reality.get("short_id") or []
         if not private_key or not short_ids:
             raise ConversionError(f"inbound {inbound.tag} missing Reality private_key or short_id")
+
+        public_key = reality_public_key(private_key)
+        if output_format is SubscriptionFormat.SING_BOX:
+            outbound: ProxyNode = {
+                "type": "vless",
+                "tag": build_proxy_name(server, publish),
+                "server": server.direct_server,
+                "server_port": publish.port or inbound.listen_port,
+                "uuid": user.uuid,
+                "packet_encoding": "xudp",
+            }
+            if user.flow:
+                outbound["flow"] = user.flow
+            tls_config = _singbox_tls(publish=publish, server_name=tls.get("server_name"))
+            if tls_config:
+                tls_config["reality"] = {
+                    "enabled": True,
+                    "public_key": public_key,
+                    "short_id": str(short_ids[0]),
+                }
+                outbound["tls"] = tls_config
+            return outbound
 
         proxy: MihomoProxy = {
             "name": build_proxy_name(server, publish),
@@ -66,7 +113,7 @@ class VlessRealityConverter(ProtocolConverter):
             "client-fingerprint": publish.client_fingerprint,
             "skip-cert-verify": publish.skip_cert_verify,
             "reality-opts": {
-                "public-key": reality_public_key(private_key),
+                "public-key": public_key,
                 "short-id": str(short_ids[0]),
             },
         }
@@ -87,16 +134,39 @@ class VlessHttpUpgradeConverter(ProtocolConverter):
         inbound: SingBoxInbound,
         user: SingBoxUser,
         publish: InboundPublishOptions,
-    ) -> MihomoProxy:
+        output_format: SubscriptionFormat = SubscriptionFormat.MIHOMO,
+    ) -> ProxyNode:
         if not user.uuid:
             raise ConversionError(f"inbound {inbound.tag} user {user.name} has no uuid")
 
         transport: dict[str, Any] = inbound.transport or {}
         headers: dict[str, Any] = transport.get("headers") or {}
-        host = headers.get("Host") or transport.get("host") or publish.server
-        node_server = publish.server or transport.get("host")
+        transport_host = transport.get("host")
+        host = headers.get("Host") or headers.get("host") or transport_host or publish.server
+        node_server = publish.server or transport_host
         if not node_server or not host:
             raise ConversionError(f"inbound {inbound.tag} missing HTTPUpgrade host")
+
+        if output_format is SubscriptionFormat.SING_BOX:
+            outbound = {
+                "type": "vless",
+                "tag": build_proxy_name(server, publish),
+                "server": node_server,
+                "server_port": publish.port or inbound.listen_port,
+                "uuid": user.uuid,
+                "packet_encoding": "xudp",
+                "transport": {
+                    "type": "httpupgrade",
+                    "host": host,
+                    "path": transport.get("path") or "/",
+                },
+            }
+            if headers:
+                outbound["transport"]["headers"] = headers
+            tls_config = _singbox_tls(publish=publish, server_name=host)
+            if tls_config:
+                outbound["tls"] = tls_config
+            return outbound
 
         return {
             "name": build_proxy_name(server, publish),

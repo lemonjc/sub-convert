@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+from sub_convert.subscriptions.formats import SubscriptionFormat
 
 
 class RenderConfig(BaseModel):
@@ -51,8 +54,20 @@ class TemplateSource(HttpYamlSource):
     pass
 
 
+class TemplatesConfig(BaseModel):
+    mihomo: TemplateSource | None = None
+    singbox: TemplateSource | None = None
+
+    @model_validator(mode="after")
+    def validate_template(self) -> TemplatesConfig:
+        if self.mihomo is None and self.singbox is None:
+            raise ValueError("at least one template must be configured")
+        return self
+
+
 class RemoteSubscription(HttpYamlSource):
     name: str
+    type: SubscriptionFormat = SubscriptionFormat.MIHOMO
 
 
 class SubscriptionUser(BaseModel):
@@ -71,7 +86,7 @@ class SubscriptionUser(BaseModel):
 
 
 class AppConfig(BaseModel):
-    template: TemplateSource
+    templates: TemplatesConfig
     servers: list[ServerSource]
     users: list[SubscriptionUser]
     render: RenderConfig = Field(default_factory=RenderConfig)
@@ -79,6 +94,30 @@ class AppConfig(BaseModel):
     http_timeout_seconds: float = Field(default=10.0, gt=0)
     remote_cache_ttl_seconds: int = Field(default=300, ge=0)
     http_user_agent: str = "sub-convert/0.1"
+
+    @property
+    def template(self) -> TemplateSource:
+        if self.templates.mihomo is None:
+            raise ValueError("Mihomo template is not configured")
+        return self.templates.mihomo
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_legacy_template(cls, data: Any) -> Any:
+        if not isinstance(data, dict) or "template" not in data:
+            return data
+
+        normalized = dict(data)
+        legacy = normalized.pop("template")
+        raw_templates = normalized.get("templates") or {}
+        if not isinstance(raw_templates, dict):
+            raise ValueError("templates must be a mapping")
+        templates = dict(raw_templates)
+        if "mihomo" in templates:
+            raise ValueError("use either template or templates.mihomo, not both")
+        templates["mihomo"] = legacy
+        normalized["templates"] = templates
+        return normalized
 
     @model_validator(mode="after")
     def validate_references(self) -> AppConfig:

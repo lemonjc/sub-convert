@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging
 
 from sub_convert.config.models import InboundPublishOptions, ServerSource
-from sub_convert.converters.base import ConversionError, ProtocolConverter
+from sub_convert.converters.base import ConversionError, ProtocolConverter, ProxyNode
 from sub_convert.converters.vless import VlessHttpUpgradeConverter, VlessRealityConverter
-from sub_convert.mihomo.models import MihomoProxy
 from sub_convert.singbox.models import SingBoxInbound
+from sub_convert.subscriptions.formats import SubscriptionFormat
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,8 @@ class ConverterRegistry:
         inbound: SingBoxInbound,
         username: str,
         strict: bool,
-    ) -> MihomoProxy | None:
+        output_format: SubscriptionFormat = SubscriptionFormat.MIHOMO,
+    ) -> ProxyNode | None:
         user = inbound.user_by_name(username)
         if user is None:
             return None
@@ -38,7 +39,13 @@ class ConverterRegistry:
             logger.warning(message)
             return None
 
-        return converter.convert(server=server, inbound=inbound, user=user, publish=publish)
+        return converter.convert(
+            server=server,
+            inbound=inbound,
+            user=user,
+            publish=publish,
+            output_format=output_format,
+        )
 
 
 def default_registry() -> ConverterRegistry:

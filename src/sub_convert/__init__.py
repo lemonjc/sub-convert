@@ -1,2 +1,2 @@
-"""Subscription generator for Mihomo clients."""
+"""Subscription generator for Mihomo and sing-box clients."""
 

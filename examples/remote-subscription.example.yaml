@@ -6,4 +6,3 @@ proxies:
     cipher: aes-128-gcm
     password: "example-password"
     udp: true
-

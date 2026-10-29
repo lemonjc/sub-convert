@@ -1,6 +1,10 @@
-template:
-  file_path: template.example.yaml
-  user_agent: "sub-convert/0.1"
+templates:
+  mihomo:
+    file_path: template.example.yaml
+    user_agent: "sub-convert/0.1"
+  singbox:
+    file_path: config.template.json
+    user_agent: "sub-convert/0.1"
 strict_conversion: false
 http_timeout_seconds: 10
 remote_cache_ttl_seconds: 300
@@ -41,6 +45,11 @@ users:
     allowed_servers:
       - example-server
     remote_subscriptions:
-      - name: Example Remote
+      - name: Example Mihomo Remote
+        type: mihomo
         file_path: examples/remote-subscription.example.yaml
         user_agent: "clash.meta"
+      - name: Example SingBox Remote
+        type: sing-box
+        file_path: examples/remote-singbox-subscription.example.json
+        user_agent: "sing-box"

@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from sub_convert.converters.base import ConversionError
-from sub_convert.subscriptions.service import UserNotFoundError
+from sub_convert.subscriptions.service import TemplateNotConfiguredError, UserNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,13 @@ def install_error_handlers(app: FastAPI) -> None:
     async def conversion_error_handler(_: Request, exc: ConversionError) -> JSONResponse:
         logger.warning("subscription conversion failed: %s", exc)
         return JSONResponse(status_code=422, content={"detail": "subscription conversion failed"})
+
+    @app.exception_handler(TemplateNotConfiguredError)
+    async def template_not_configured_handler(
+        _: Request, exc: TemplateNotConfiguredError
+    ) -> JSONResponse:
+        logger.warning("subscription format unavailable: %s", exc)
+        return JSONResponse(status_code=406, content={"detail": "subscription format unavailable"})
 
     @app.exception_handler(Exception)
     async def generic_error_handler(_: Request, exc: Exception) -> JSONResponse:

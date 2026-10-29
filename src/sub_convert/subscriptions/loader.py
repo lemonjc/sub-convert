@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,7 +10,13 @@ import httpx
 import yaml
 
 from sub_convert.config.models import HttpYamlSource, RemoteSubscription
+from sub_convert.converters.base import ProxyNode
 from sub_convert.mihomo.models import MihomoProxy
+from sub_convert.subscriptions.formats import SubscriptionFormat
+
+logger = logging.getLogger(__name__)
+
+SINGBOX_CONTROL_OUTBOUND_TYPES = frozenset({"block", "direct", "dns", "selector", "urltest"})
 
 
 @dataclass
@@ -34,8 +41,18 @@ class YamlSourceLoader:
     async def load_many(self, remotes: list[RemoteSubscription]) -> list[MihomoProxy]:
         proxies: list[MihomoProxy] = []
         for remote in remotes:
+            if remote.type is not SubscriptionFormat.MIHOMO:
+                continue
             proxies.extend(await self.load_proxies(remote))
         return proxies
+
+    async def load_singbox_many(self, remotes: list[RemoteSubscription]) -> list[ProxyNode]:
+        outbounds: list[ProxyNode] = []
+        for remote in remotes:
+            if remote.type is not SubscriptionFormat.SING_BOX:
+                continue
+            outbounds.extend(await self.load_singbox_outbounds(remote))
+        return outbounds
 
     async def load_document(self, source: HttpYamlSource) -> dict[str, Any]:
         key = self._cache_key(source)
@@ -72,6 +89,26 @@ class YamlSourceLoader:
             proxies = []
 
         return [proxy for proxy in proxies if isinstance(proxy, dict)]
+
+    async def load_singbox_outbounds(self, remote: RemoteSubscription) -> list[ProxyNode]:
+        data = await self.load_document(remote)
+        outbounds = data.get("outbounds") or []
+        if not isinstance(outbounds, list):
+            return []
+
+        nodes = [
+            outbound
+            for outbound in outbounds
+            if isinstance(outbound, dict)
+            and outbound.get("type") not in SINGBOX_CONTROL_OUTBOUND_TYPES
+        ]
+        if not nodes:
+            logger.warning(
+                "remote subscription %r has no sing-box outbounds; "
+                "check its URL and configured user_agent",
+                remote.name,
+            )
+        return nodes
 
     def _cache_key(self, source: HttpYamlSource) -> str:
         location = source.url or str(source.file_path)

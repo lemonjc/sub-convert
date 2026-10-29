@@ -1,0 +1,22 @@
+{
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "Remote SingBox Example",
+      "server": "198.51.100.30",
+      "server_port": 443,
+      "uuid": "33333333-3333-4333-8333-333333333333",
+      "tls": {
+        "enabled": true,
+        "server_name": "remote-singbox.example.com"
+      }
+    },
+    {
+      "type": "selector",
+      "tag": "Remote Selector",
+      "outbounds": [
+        "Remote SingBox Example"
+      ]
+    }
+  ]
+}
