@@ -70,6 +70,7 @@ async def subscription(
     request: Request,
     include_remote: bool = True,
     merge_remote: bool | None = None,
+    notun: bool = False,
     filename: str | None = None,
 ) -> PlainTextResponse:
     should_include_remote = include_remote if merge_remote is None else merge_remote
@@ -79,6 +80,7 @@ async def subscription(
         token,
         include_remote=should_include_remote,
         output_format=output_format,
+        notun=notun,
     )
     return _subscription_response(
         content,
@@ -93,6 +95,7 @@ async def subscription_v1(
     request: Request,
     include_remote: bool = True,
     merge_remote: bool | None = None,
+    notun: bool = False,
     filename: str | None = None,
 ) -> PlainTextResponse:
     should_include_remote = include_remote if merge_remote is None else merge_remote
@@ -102,6 +105,7 @@ async def subscription_v1(
         token,
         include_remote=should_include_remote,
         output_format=output_format,
+        notun=notun,
     )
     return _subscription_response(
         content,

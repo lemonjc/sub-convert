@@ -1,9 +1,11 @@
 templates:
   mihomo:
     file_path: template.example.yaml
+    # notun_url: "https://example.com/mihomo-template-notun.yaml"
     user_agent: "sub-convert/0.1"
   singbox:
     file_path: config.template.json
+    # notun_url: "https://example.com/sing-box-template-notun.json"
     user_agent: "sub-convert/0.1"
 strict_conversion: false
 http_timeout_seconds: 10

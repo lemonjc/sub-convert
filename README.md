@@ -15,7 +15,9 @@
 - Structured template rendering and proxy/outbound-group injection
 - Local or HTTP templates and dual-format remote subscription loading
 - Per-source User-Agent support for HTTP template and subscription downloads
+- IPv4-only HTTP downloads for remote templates and subscriptions
 - Query parameter switch for merging or skipping remote subscriptions
+- Query parameter switch for requesting remote `notun` template and subscription URLs
 - SHA-256 token hashes in config instead of plaintext tokens
 
 ## Quick Start
@@ -113,6 +115,7 @@ templates:
     user_agent: "clash.meta"
   singbox:
     url: "https://example.com/sing-box-template.json"
+    notun_url: "https://example.com/sing-box-template-notun.json"
     user_agent: "sub-convert/0.1"
 ```
 
@@ -151,6 +154,31 @@ Remote subscription merge applies to both formats and is enabled by default. `ty
 ```
 
 `merge_remote` has priority when both parameters are provided.
+
+Remote templates and subscriptions are downloaded over IPv4 only. Add `notun=true` to a subscription request to use their configured `notun_url` values:
+
+```text
+/sub/{token}?notun=true
+/api/v1/subscription/{token}?notun=true
+```
+
+For remote templates and subscriptions, set `notun_url` next to `url`:
+
+```yaml
+templates:
+  singbox:
+    url: "https://example.com/config-1.15.0.json"
+    notun_url: "https://example.com/config-1.15.0-notun.json"
+
+users:
+  - username: alice
+    remote_subscriptions:
+      - name: Example
+        url: "https://example.com/sub?token=abc"
+        notun_url: "https://example.com/sub?token=abc&notun=true"
+```
+
+`notun_url` is used exactly as configured when `notun=true`. If it is omitted, the service falls back to appending `notun=true` to `url`. Normal and `notun` addresses use separate cache entries. Local template and subscription files are unaffected.
 
 Invalid tokens return `404` so the API does not reveal whether a token exists.
 

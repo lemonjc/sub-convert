@@ -51,6 +51,7 @@ class SubscriptionService:
         *,
         include_remote: bool = True,
         output_format: SubscriptionFormat = SubscriptionFormat.MIHOMO,
+        notun: bool = False,
     ) -> str:
         user = self.find_user_by_token(token)
         nodes = self._convert_nodes_for_user(user, output_format=output_format)
@@ -59,9 +60,12 @@ class SubscriptionService:
             source = self._config.templates.singbox
             if source is None:
                 raise TemplateNotConfiguredError("sing-box template is not configured")
-            template = await self._yaml_loader.load_document(source)
+            template = await self._yaml_loader.load_document(source, notun=notun)
             remote_outbounds = (
-                await self._yaml_loader.load_singbox_many(user.remote_subscriptions)
+                await self._yaml_loader.load_singbox_many(
+                    user.remote_subscriptions,
+                    notun=notun,
+                )
                 if include_remote
                 else []
             )
@@ -73,9 +77,12 @@ class SubscriptionService:
         source = self._config.templates.mihomo
         if source is None:
             raise TemplateNotConfiguredError("Mihomo template is not configured")
-        template = await self._yaml_loader.load_document(source)
+        template = await self._yaml_loader.load_document(source, notun=notun)
         remote_proxies = (
-            await self._yaml_loader.load_many(user.remote_subscriptions)
+            await self._yaml_loader.load_many(
+                user.remote_subscriptions,
+                notun=notun,
+            )
             if include_remote
             else []
         )

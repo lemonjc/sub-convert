@@ -40,6 +40,7 @@ class ServerSource(BaseModel):
 
 class HttpYamlSource(BaseModel):
     url: str | None = None
+    notun_url: str | None = None
     file_path: Path | None = None
     user_agent: str | None = None
 
@@ -47,6 +48,8 @@ class HttpYamlSource(BaseModel):
     def validate_source(self) -> HttpYamlSource:
         if bool(self.url) == bool(self.file_path):
             raise ValueError("YAML source requires exactly one of url or file_path")
+        if self.notun_url and not self.url:
+            raise ValueError("notun_url requires url")
         return self
 
 
